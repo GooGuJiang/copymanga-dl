@@ -1,4 +1,3 @@
-from ast import excepthandler
 import time
 from tkinter import E
 import requests,bs4,json
@@ -8,8 +7,6 @@ import os
 import img2pdf
 from requests_html import HTMLSession
 from threading import Thread
-import threading
-glock = threading.Lock()
 #----------------------------------------------
 headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
@@ -26,7 +23,6 @@ def download_img(img_url,filnem):
         if (response.getcode() == 200):
             with open(filename, "wb") as f:
                 f.write(response.read()) 
-            glock.release()
             logger.info(str(filnem)+" 下载完成!")
             return filename
     except Exception as oo:

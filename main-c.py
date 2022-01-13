@@ -5,9 +5,7 @@ from loguru import logger
 import os
 import img2pdf
 from threading import Thread
-import threading
 from selenium import webdriver
-glock = threading.Lock()
 #----------------------------------------------
 headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
@@ -25,7 +23,6 @@ def download_img(img_url,filnem):
             with open(filename, "wb") as f:
                 f.write(response.read()) 
                 logger.info(str(filnem)+" 下载完成!")
-            glock.release()
             return filename
     except Exception as oo:
         logger.error(f"图片下载遇到错误 "+str(oo))
