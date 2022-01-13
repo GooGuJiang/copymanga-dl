@@ -1,24 +1,15 @@
 from selenium import webdriver
-from bs4 import BeautifulSoup
 import time
 import requests,bs4,json
-from lxml import etree
-from pyquery import PyQuery as pq
 import time
-from bs4 import BeautifulSoup
-from urllib3.connectionpool import xrange
 import urllib.request
 from loguru import logger
 import os
 import img2pdf
-import socket
-import socks
 #----------------------------------------------
 headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
             }
-
-proxies= {'http': 'socks5://127.0.0.1:9078','https': 'socks5://127.0.0.1:9078'}
 
 url_mh = "https://www.copymanga.com"
 #----------------------------------------------
@@ -76,10 +67,7 @@ def dl_manhua(urll,wjj,hua):
         pass
     logger.info("模拟浏览器滑动操作")
     driver.set_page_load_timeout(60)
-    #doc = BeautifulSoup(driver.page_source, 'html.parser')
-    #course = doc.find('h1', class_='clp-lead__title').get_text().replace('\n','')
     time.sleep(5)
-    #print(driver.page_source)
     logger.info("获取网页图片列表")
     noStarchSoup = bs4.BeautifulSoup(driver.page_source,"html.parser")
     #关闭浏览器
