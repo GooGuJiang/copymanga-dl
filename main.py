@@ -1,11 +1,13 @@
-from selenium import webdriver
 import time
 import requests,bs4,json
-import time
 import urllib.request
 from loguru import logger
 import os
 import img2pdf
+from requests_html import HTMLSession
+from threading import Thread
+import threading
+glock = threading.Lock()
 #----------------------------------------------
 headers = {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
@@ -21,9 +23,27 @@ def download_img(img_url,filnem):
         if (response.getcode() == 200):
             with open(filename, "wb") as f:
                 f.write(response.read()) 
+            glock.release()
             return filename
     except:
         return "failed"
+
+def get_mhlist(url):
+    list_mhname = []
+    session_get = HTMLSession()
+    r = session_get.get(url)
+    r.html.render(wait=60)
+    #time.sleep(1)
+    noStarchSoup = bs4.BeautifulSoup(r.html.html,"html.parser")
+    elems = noStarchSoup.select('div[class="tab-pane fade show active"]')[0]
+    elems = elems.select('ul')[0]
+    elems = elems.select('a')
+    for b in range(0,len(elems)):
+        json_inup = elems[b]
+        list_josn = json.loads(json.dumps(json_inup.attrs))
+        list_mhname.append(str(list_josn["title"]))
+    #elems = json.loads(json.dumps(elems.attrs))
+    return list_mhname
 
 def get_document(url):
     try:
@@ -44,45 +64,28 @@ def get_document(url):
     return data
 
 def dl_manhua(urll,wjj,hua):
+    session = HTMLSession()
     logger.info(f"创建漫画第 "+str(hua)+ " 话文件夹")
     try:
         os.mkdir("./dl-img/"+str(wjj)+"/"+str(hua))
     except:
         pass
     url = str(urll)
-
-    chrome_options = webdriver.ChromeOptions() 
-    chrome_options.add_argument("--incognito")
-    chrome_options.set_headless()
-    driver = webdriver.Chrome(chrome_options=chrome_options)
-    
     logger.info("开始模拟浏览器访问")
-    driver.get(url)
-
-    try:
-        for i in range(0,500): #模拟浏览器滑动操作
-            js = "window.scrollTo(0,"+str(i)+")"
-            driver.execute_script(js)
-    except:
-        pass
-    logger.info("模拟浏览器滑动操作")
-    driver.set_page_load_timeout(60)
-    time.sleep(5)
+    r = session.get(url)
     logger.info("获取网页图片列表")
-    noStarchSoup = bs4.BeautifulSoup(driver.page_source,"html.parser")
-    #关闭浏览器
-    driver.quit()
+    r.html.render(scrolldown=50, sleep=.1,wait=60)
+    noStarchSoup = bs4.BeautifulSoup(r.html.html,"html.parser")
     elems_ul = noStarchSoup.select('ul')[0]
     elems = elems_ul.select('img')
-
     logger.info("获取成功!共 "+str(len(elems))+" 张,开始下载图片")
-    for b in range(0,len(elems)):
+    
+    for b in range(len(elems)):
         html_img = elems[b]
         dl_json = json.loads(json.dumps(html_img.attrs))
-        #print(dl_json["data-src"])
         dl_img_url = dl_json["data-src"]
-        out = download_img(dl_img_url,"./dl-img/"+str(wjj)+"/"+str(hua)+"/"+str(b+1)+".jpg")
-        logger.info(str(out)+" 下载完成")
+        t1 = Thread(target=download_img, args=(dl_img_url,"./dl-img/"+str(wjj)+"/"+str(hua)+"/"+str(b+1)+".jpg"))  # 定义线程t1，线程任务为调用task1函数，task1函数的参数是6
+        t1.start()
         time.sleep(0.5)
     logger.info(f"漫画第 "+str(hua)+ " 话下载完成")
 
@@ -127,6 +130,7 @@ if __name__ == '__main__':
     mh_url = str(input("请输入漫画地址:"))
     print("正在获取漫画信息...")
     mh_name = get_name(mh_url)
+    mhlist_name = get_mhlist(mh_url)
     print("漫画名字为 "+mh_name)
     print("创建文件夹 "+mh_name)
     os.mkdir("./dl-img/"+str(mh_name))
@@ -135,11 +139,11 @@ if __name__ == '__main__':
     mh_url = get_rk(mh_url)
     #next_url = ""
     while mh_url != False:
-        dl_manhua(mh_url,mh_name,str(mh_nub))
-        make_pdf(mh_name,str(mh_nub))
+        dl_manhua(mh_url,mh_name,str(mhlist_name[mh_nub-1]))
+        make_pdf(mh_name,str(mhlist_name[mh_nub-1]))
         mh_url = next_mh(mh_url)
         mh_nub +=1
-    os.system('TASKKILL /F /IM chromedriver.exe')
+    print("漫画下载完成!")
 
 
 
