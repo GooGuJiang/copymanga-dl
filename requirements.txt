@@ -3,3 +3,4 @@ loguru
 requests_html
 requests
 bs4
+selenium

@@ -17,6 +17,7 @@ url_mh = "https://www.copymanga.com"
 #----------------------------------------------
 def download_img(img_url,filnem):
     request = urllib.request.Request(img_url, headers=headers)
+    logger.info("开始下载 "+str(filnem))
     try:
         response = urllib.request.urlopen(request)
         filename = filnem
@@ -24,6 +25,7 @@ def download_img(img_url,filnem):
             with open(filename, "wb") as f:
                 f.write(response.read()) 
             glock.release()
+            logger.info(str(filnem)+" 下载完成!")
             return filename
     except:
         return "failed"
@@ -79,14 +81,20 @@ def dl_manhua(urll,wjj,hua):
     elems_ul = noStarchSoup.select('ul')[0]
     elems = elems_ul.select('img')
     logger.info("获取成功!共 "+str(len(elems))+" 张,开始下载图片")
-    
+    thread_list = []
     for b in range(len(elems)):
         html_img = elems[b]
         dl_json = json.loads(json.dumps(html_img.attrs))
         dl_img_url = dl_json["data-src"]
         t1 = Thread(target=download_img, args=(dl_img_url,"./dl-img/"+str(wjj)+"/"+str(hua)+"/"+str(b+1)+".jpg"))  # 定义线程t1，线程任务为调用task1函数，task1函数的参数是6
-        t1.start()
+        thread_list.append(t1)
         time.sleep(0.5)
+
+    for t in thread_list:
+        t.setDaemon(True)
+        t.start()
+    for t in thread_list:
+        t.join() 
     logger.info(f"漫画第 "+str(hua)+ " 话下载完成")
 
 def get_rk(url):
