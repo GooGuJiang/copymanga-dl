@@ -1,0 +1,5 @@
+img2pdf
+loguru
+requests_html
+requests
+bs4
