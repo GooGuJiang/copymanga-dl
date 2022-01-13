@@ -1,4 +1,6 @@
+from ast import excepthandler
 import time
+from tkinter import E
 import requests,bs4,json
 import urllib.request
 from loguru import logger
@@ -27,7 +29,8 @@ def download_img(img_url,filnem):
             glock.release()
             logger.info(str(filnem)+" 下载完成!")
             return filename
-    except:
+    except Exception as oo:
+        logger.error(f"图片下载遇到错误 "+str(oo))
         return "failed"
 
 def get_mhlist(url):
@@ -67,7 +70,7 @@ def get_document(url):
 
 def dl_manhua(urll,wjj,hua):
     session = HTMLSession()
-    logger.info(f"创建漫画第 "+str(hua)+ " 话文件夹")
+    logger.info(f"创建漫画 "+str(hua)+ " 文件夹")
     try:
         os.mkdir("./dl-img/"+str(wjj)+"/"+str(hua))
     except:
@@ -130,28 +133,33 @@ def make_pdf(wjj,hua):
         list_out_nub.append(fil_rl+"/"+str(i+1)+".jpg")
 
     with open("./dl-img/"+wjj+"/pdf/"+hua+".pdf", "wb") as f:
-        f.write(img2pdf.convert(list_out_nub))
-        f.close()
+        try:
+            f.write(img2pdf.convert(list_out_nub))
+            f.close()
+        except Exception as err:
+            logger.error(f"PDF生成遇到错误 "+str(err))
 
 if __name__ == '__main__':
-    mh_nub = 1
-    mh_url = str(input("请输入漫画地址:"))
-    print("正在获取漫画信息...")
-    mh_name = get_name(mh_url)
-    mhlist_name = get_mhlist(mh_url)
-    print("漫画名字为 "+mh_name)
-    print("创建文件夹 "+mh_name)
-    os.mkdir("./dl-img/"+str(mh_name))
-    os.mkdir("./dl-img/"+str(mh_name)+"/pdf")
-    print("开始下载...")
-    mh_url = get_rk(mh_url)
-    #next_url = ""
-    while mh_url != False:
-        dl_manhua(mh_url,mh_name,str(mhlist_name[mh_nub-1]))
-        make_pdf(mh_name,str(mhlist_name[mh_nub-1]))
-        mh_url = next_mh(mh_url)
-        mh_nub +=1
-    print("漫画下载完成!")
-
+    try:
+        mh_nub = 1
+        mh_url = str(input("请输入漫画地址:"))
+        print("正在获取漫画信息...")
+        mh_name = get_name(mh_url)
+        mhlist_name = get_mhlist(mh_url)
+        print("漫画名字为 "+mh_name)
+        print("创建文件夹 "+mh_name)
+        os.mkdir("./dl-img/"+str(mh_name))
+        os.mkdir("./dl-img/"+str(mh_name)+"/pdf")
+        print("开始下载...")
+        mh_url = get_rk(mh_url)
+        #next_url = ""
+        while mh_url != False:
+            dl_manhua(mh_url,mh_name,str(mhlist_name[mh_nub-1]))
+            make_pdf(mh_name,str(mhlist_name[mh_nub-1]))
+            mh_url = next_mh(mh_url)
+            mh_nub +=1
+        print("漫画下载完成!")
+    except Exception as out_err:
+        logger.error(f"主程序遇到错误 "+str(out_err))
 
 
